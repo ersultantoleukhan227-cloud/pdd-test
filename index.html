@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ПДД Экзамен</title>
+
+<style>
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #eef2f5;
+}
+
+.screen {
+  max-width: 520px;
+  margin: auto;
+  padding: 20px;
+}
+
+.hidden { display: none; }
+
+h1, h2 {
+  text-align: center;
+}
+
+.ticket {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  font-weight: bold;
+}
+
+.question {
+  margin: 15px 0;
+}
+
+img {
+  width: 100%;
+  border-radius: 10px;
+  margin-bottom: 10px;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin: 6px 0;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+}
+
+.correct { background: #4caf50; color: white; }
+.wrong { background: #f44336; color: white; }
+.next { background: #2196f3; color: white; }
+</style>
+</head>
+
+<body>
+
+<div class="screen" id="menu">
+  <h1>🚦 ПДД Экзамен</h1>
+  <div class="ticket" onclick="start(0)">Билет №1</div>
+  <div class="ticket" onclick="start(1)">Билет №2</div>
+  <div class="ticket" onclick="start(2)">Билет №3</div>
+</div>
+
+<div class="screen hidden" id="quiz">
+  <div class="top">
+    <div id="progress"></div>
+    <div id="timer"></div>
+  </div>
+  <div class="question" id="question"></div>
+  <img id="image">
+  <div id="answers"></div>
+  <button class="next hidden" id="nextBtn" onclick="next()">Далее</button>
+</div>
+
+<div class="screen hidden" id="result"></div>
+
+<script>
+const tickets = [
+[
+ {q:"Кто имеет преимущество?",img:"https://i.imgur.com/1Q9Z1Zm.png",a:["Водитель","Пешеход","Никто","Автобус"],c:1},
+ {q:"Разрешён ли поворот?",img:"https://i.imgur.com/ykZ9Z6U.png",a:["Да","Нет","Только днём","По ситуации"],c:0}
+],
+[
+ {q:"Можно ли обгонять?",img:"https://i.imgur.com/6I2Jm7Q.png",a:["Да","Нет","Если быстро","Ночью"],c:1},
+ {q:"Кто едет первым?",img:"https://i.imgur.com/V9Z7Y0S.png",a:["Синий","Красный","Оба","Никто"],c:0}
+],
+[
+ {q:"Что означает знак?",img:"https://i.imgur.com/fJk9y7R.png",a:["Главная дорога","Уступи","Стоп","Ограничение"],c:2},
+ {q:"Можно ли ехать?",img:"https://i.imgur.com/K8Qp5QX.png",a:["Да","Нет","Пешеходам","Маршрутке"],c:1}
+]
+];
+
+let t, i, score, errors, time, timer;
+
+const menu = document.getElementById("menu");
+const quiz = document.getElementById("quiz");
+const res = document.getElementById("result");
+
+const qEl = document.getElementById("question");
+const imgEl = document.getElementById("image");
+const aEl = document.getElementById("answers");
+const pEl = document.getElementById("progress");
+const timerEl = document.getElementById("timer");
+const nextBtn = document.getElementById("nextBtn");
+
+function start(ticket){
+  t = tickets[ticket];
+  i = score = errors = 0;
+  time = 20 * 60;
+  menu.classList.add("hidden");
+  quiz.classList.remove("hidden");
+  load();
+  timer = setInterval(tick,1000);
+}
+
+function load(){
+  nextBtn.classList.add("hidden");
+  aEl.innerHTML="";
+  pEl.textContent = `Вопрос ${i+1}/${t.length} | Ошибки: ${errors}`;
+  qEl.textContent = t[i].q;
+  imgEl.src = t[i].img;
+
+  t[i].a.forEach((text,idx)=>{
+    let b=document.createElement("button");
+    b.textContent=text;
+    b.onclick=()=>answer(b,idx);
+    aEl.appendChild(b);
+  });
+}
+
+function answer(btn,idx){
+  const btns=aEl.querySelectorAll("button");
+  btns.forEach(b=>b.disabled=true);
+
+  if(idx===t[i].c){
+    btn.classList.add("correct");
+    score++;
+  } else {
+    btn.classList.add("wrong");
+    btns[t[i].c].classList.add("correct");
+    errors++;
+  }
+  nextBtn.classList.remove("hidden");
+}
+
+function next(){
+  i++;
+  if(i<t.length && errors<3){
+    load();
+  } else {
+    finish();
+  }
+}
+
+function finish(){
+  clearInterval(timer);
+  quiz.classList.add("hidden");
+  res.classList.remove("hidden");
+
+  const passed = errors < 3;
+  localStorage.setItem("lastResult", passed ? "СДАН" : "НЕ СДАН");
+
+  res.innerHTML = `
+    <h2>${passed ? "🎉 ЭКЗАМЕН СДАН" : "❌ ЭКЗАМЕН НЕ СДАН"}</h2>
+    <p>Правильных: ${score}</p>
+    <p>Ошибок: ${errors}</p>
+    <button onclick="location.reload()">В меню</button>
+  `;
+}
+
+function tick(){
+  time--;
+  let m=Math.floor(time/60);
+  let s=time%60;
+  timerEl.textContent=`${m}:${s<10?"0":""}${s}`;
+  if(time<=0) finish();
+}
+</script>
+
+</body>
+</html>
